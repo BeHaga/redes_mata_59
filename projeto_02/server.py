@@ -24,3 +24,38 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+#indo para a parte de autenticação do servidor, solicitando ao usuário login e registro
+users = {"admin": "password"}  # Dicionário simples para autenticação
+
+def authenticate(client_socket):
+    #Lembrando que bytes não aceita caracteres pt-br
+    client_socket.send(b"Digite o nome de usuario: ")
+    username = client_socket.recv(1024).decode()
+    client_socket.send(b"Digite a senha: ")
+    password = client_socket.recv(1024).decode()
+
+    if username in users and users[username] == password:
+        client_socket.send(b"Autenticado com sucesso!")
+        print(f"Usuário {username} autenticado com sucesso!")
+        return True
+    else:
+        #Lembrando que bytes não aceita caracteres pt-br
+        client_socket.send(b"Falha na autenticacao!")
+        print(f"Tentativa de login falhou para o usuário {username}.")
+        return False
+    
+#adição de threads para possibilitar que vários clientes se conectem simultaneamente
+import threading
+
+def handle_client(client_socket, addr):
+    print(f"Conexão estabelecida com {addr}")
+    if authenticate(client_socket):        
+        #Lembrando que bytes não aceita caracteres pt-br
+        client_socket.send(b"Voce agora esta conectado!")
+    client_socket.close()
+
+while True:
+    client_socket, addr = server_socket.accept()
+    thread = threading.Thread(target=handle_client, args=(client_socket, addr))
+    thread.start()

@@ -23,3 +23,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+#é necessário solicitar ao cliente login e senha para fazer a autenticação e se manter conectado ao servidor graças ao thread
