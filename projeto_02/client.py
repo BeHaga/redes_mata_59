@@ -8,6 +8,9 @@
 
 import socket
 import threading
+from crypto import AES
+
+aes = AES()
 
 def main():
     #.AF_INET para comunicação baseada em IPs no formato protocolo IPv4
@@ -15,6 +18,7 @@ def main():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #esse IP é o padrão de loopback, utilizado em desenvolvimento local
     client_socket.connect(("127.0.0.1", 12345))
+    client_socket.sendall(aes.key)
     
     print("Seja bem vindo! Escolha uma das opções a seguir: ")
 
@@ -25,21 +29,21 @@ def main():
         option = input("Digite o número da opção desejada: ")
 
         if option == "1":
-            client_socket.send(b"autenticar")
+            client_socket.send(aes.encrypt("autenticar"))
             authenticate(client_socket)
             break
         elif option == "2":
-            client_socket.send(b"cadastrar")
+            client_socket.send(aes.encrypt("cadastrar"))
             register(client_socket)
             break
         elif option == "3":
-            client_socket.send(b"sair")
-            response = client_socket.recv(1024).decode()
+            client_socket.send(aes.encrypt("sair"))
+            response = aes.decrypt(client_socket.recv(1024))
             print(response)
             break
         else:
-            client_socket.send(b"invalido")
-            response = client_socket.recv(1024).decode()
+            client_socket.send(aes.encrypt("invalido"))
+            response = aes.decrypt(client_socket.recv(1024))
             print(response)
             print("Segue novamente as opções:")
 
@@ -48,11 +52,11 @@ def main():
 def authenticate(client_socket):
     #autenticacao por parte do cliente
     username = input("Digite o nome de usuário: ")
-    client_socket.send(username.encode())
+    client_socket.send(aes.encrypt(username))
     password = input("Digite a senha: ")
-    client_socket.send(password.encode())
+    client_socket.send(aes.encrypt(password))
 
-    response = client_socket.recv(1024).decode()
+    response = aes.decrypt(client_socket.recv(1024))
     print(response)
 
     if response == "Autenticado com sucesso!":
@@ -63,10 +67,10 @@ def authenticate(client_socket):
 
 def register(client_socket):
     new_username = input("Digite o nome de usuário desejado: ")
-    client_socket.send(new_username.encode())
+    client_socket.send(aes.encrypt(new_username))
     new_password = input("Digite a senha desejada: ")
-    client_socket.send(new_password.encode())
-    response = client_socket.recv(1024).decode()
+    client_socket.send(aes.encrypt(new_password))
+    response = aes.decrypt(client_socket.recv(1024))
     print(response)
     if response == "Usuario ja existe!":
         register(client_socket)
@@ -80,7 +84,7 @@ def chat(client_socket):
     print("'/exit' para sair ou '/p <destinatário> <mensagem>' para uma mensagem privada")
     while True:
         message = input()
-        client_socket.sendall(message.encode())
+        client_socket.sendall(aes.encrypt(message))
         if message == "/exit":
             print("Você foi desconectado \n")
             break
@@ -88,7 +92,7 @@ def chat(client_socket):
 def receive_messages(client_socket):
     while True:
         try:
-            message = client_socket.recv(1024).decode()
+            message = aes.decrypt(client_socket.recv(1024))
             if message:
                 print(message)
         except:
