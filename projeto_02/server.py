@@ -5,6 +5,8 @@ import socket
 #adição de threads para possibilitar que vários clientes se conectem simultaneamente
 import threading
 
+active_connections = {}  # Dicionário para armazenar conexões ativas
+
 def main():
     #.AF_INET para comunicação baseada em IPs no formato protocolo IPv4
     #.SOCK_STREAM implementação de socket TCP
@@ -69,7 +71,7 @@ def authenticate(client_socket, addr):
     password = client_socket.recv(1024).decode()
 
     if username in users and users[username] == password:
-        users[username] = {"sckt": client_socket}
+        active_connections[username] = client_socket  # Armazena socket em dicionário separado
         client_socket.send(b"Autenticado com sucesso!")
         print(f"Usuário {username} autenticado com sucesso!")
         return chat(client_socket, addr, username)
@@ -114,14 +116,13 @@ def chat(client_socket, addr, sender):
         client_socket.send(response.encode())
 
 def send_private_message(client_socket, sender, receiver, text):
-    if receiver in users and users[receiver]["sckt"]: #Se usuario existe e tem uma conexão ativa
-        receiver_socket = users[receiver]["sckt"]
+    if receiver in active_connections:  # Verifica conexões ativas em vez de users
+        receiver_socket = active_connections[receiver]
         mensagem = f"({sender}): {text}"
         receiver_socket.sendall(mensagem.encode())
-    
     else:
-        print(f"Destinatário {receiver} não existe")
-        aviso = "Usuário não existe \n"
+        print(f"Destinatário {receiver} não existe ou não está conectado")
+        aviso = "Usuário não existe ou não está conectado \n"
         client_socket.sendall(aviso.encode())
 
 if __name__ == "__main__":
