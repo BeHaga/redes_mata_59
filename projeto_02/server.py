@@ -2,6 +2,7 @@
 #  - criar um servidor para implementar as funcionalidades e requisitos do projeto
 
 import socket
+import threading
 
 def main():
     #.AF_INET para comunicação baseada em IPs no formato protocolo IPv4
@@ -14,25 +15,18 @@ def main():
     print("Servidor iniciado. Aguardando conexões...")
 
     while True:
-        #addr é uma tupla
         client_socket, addr = server_socket.accept()
-        print(f"Conexão estabelecida com {addr}")
-        #.send() envio de mensagem ao cliente em formato de bytes
-        client_socket.send(b"Bem-vindo ao servidor!")
-        #.close() é utilizado para liberar recursos do sistema e informar ao cliente que a comunicação com o servidor foi encerrada
-        client_socket.close()
-
-if __name__ == "__main__":
-    main()
+        thread = threading.Thread(target=handle_client, args=(client_socket, addr))
+        thread.start()
 
 #indo para a parte de autenticação do servidor, solicitando ao usuário login e registro
-users = {"admin": "password"}  # Dicionário simples para autenticação
+users = {"admin": "password", "bh": "1234"}  # Dicionário simples para autenticação
 
 def authenticate(client_socket):
     #Lembrando que bytes não aceita caracteres pt-br
-    client_socket.send(b"Digite o nome de usuario: ")
+    # client_socket.send(b"Digite o nome de usuario: ")
     username = client_socket.recv(1024).decode()
-    client_socket.send(b"Digite a senha: ")
+    # client_socket.send(b"Digite a senha: ")
     password = client_socket.recv(1024).decode()
 
     if username in users and users[username] == password:
@@ -50,12 +44,20 @@ import threading
 
 def handle_client(client_socket, addr):
     print(f"Conexão estabelecida com {addr}")
-    if authenticate(client_socket):        
-        #Lembrando que bytes não aceita caracteres pt-br
-        client_socket.send(b"Voce agora esta conectado!")
-    client_socket.close()
+    if authenticate(client_socket):
+        while True:        
+            #recebe a mensagem do cliente
+            message = client_socket.recv(1024).decode()
+            if message == "sair":
+                client_socket.close()
+                print(f"O usuário {addr} encerrou sua conexão com o servidor")
+                return False
 
-while True:
-    client_socket, addr = server_socket.accept()
-    thread = threading.Thread(target=handle_client, args=(client_socket, addr))
-    thread.start()
+            print(f"Mensagem recebido do usuário {addr}")
+            
+            #Lembrando que bytes não aceita caracteres pt-br
+            response = f"Eu recebi a sua mensagem que veio escrito '{message}'"
+            client_socket.send(response.encode())
+    
+if __name__ == "__main__":
+    main()

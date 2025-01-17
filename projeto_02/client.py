@@ -14,14 +14,32 @@ def main():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #esse IP é o padrão de loopback, utilizado em desenvolvimento local
     client_socket.connect(("127.0.0.1", 12345))
-    #1024 bytes é o tamanho máximo a ler por chamada do que vem no socket
-    message = client_socket.recv(1024)
-    #.decode() transforma de bytes para string
-    print("Mensagem do servidor:", message.decode())
+
+    #autenticacao por parte do cliente
+    username = input("Digite o nome de usuário: ")
+    client_socket.send(username.encode())
+    password = input("Digite a senha: ")
+    client_socket.send(password.encode())
+
+    response = client_socket.recv(1024).decode()
+    print(response)
+
+    if response == "Autenticado com sucesso!":
+        chat(client_socket)
+        
     #.close() é utilizado para liberar recursos do sistema e informar ao cliente que a comunicação com o servidor foi encerrada
     client_socket.close()
 
+def chat(client_socket):
+    while True:
+        message = input("Digite 'sair' para sair ou Digite sua mensagem: ")
+        client_socket.send(message.encode())
+        response = client_socket.recv(1024).decode()
+        if response == "":
+            print(f"Desconectado do servidor")
+            return False
+        print(f"Resposta do servidor: {response}")
+
+#executar a main sempre após todas as funções estarem escritas acima
 if __name__ == "__main__":
     main()
-
-#é necessário solicitar ao cliente login e senha para fazer a autenticação e se manter conectado ao servidor graças ao thread
