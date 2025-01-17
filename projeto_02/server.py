@@ -111,6 +111,11 @@ def chat(client_socket, addr, sender):
             else:
                 client_socket.send(aes.encrypt("Usuário não encontrado."))
 
+        elif message.startswith("/file"):
+            _, receiver, file_name, file_size = message.split(" ", 3)
+            file_size = int(file_size)
+            receive_file(client_socket, sender, receiver, file_name, file_size)
+
         elif message.startswith("/exit"):
             client_socket.close()
             print(f"O usuário {sender} {addr} encerrou sua conexão com o servidor")
@@ -140,6 +145,27 @@ def send_private_message(client_socket, sender, receiver, text):
         print(f"Destinatário {receiver} não existe ou não está conectado")
         aviso = "Usuário não existe ou não está conectado \n"
         client_socket.send(aes.encrypt(aviso))
+
+def receive_file(client_socket, sender, receiver, file_name, file_size):
+    if receiver in active_connections:
+        receiver_socket = active_connections[receiver]
+        receiver_addr = receiver_socket.getpeername()
+        aes_receiver = AES(key=clients_aes_keys[receiver_addr])
+
+        #momento que o servidor irá receber o arquivo do remetente
+        file_content = b""
+        while len(file_content) < file_size:
+            file_content += client_socket.recv(min(file_size - len(file_content), 1024))
+
+        #envia o arquivo ao destinatário
+        header = f"/file {sender} {file_name} {file_size}"
+        receiver_socket.sendall(aes_receiver.encrypt(header))
+        receiver_socket.sendall(file_content)
+        print(f"Arquivo '{file_name}' enviado de {sender} para {receiver}.")
+
+    else:
+        aes_sender = aes = AES(key=clients_aes_keys[client_socket.getpeername()])
+        client_socket.send(aes_sender.encrypt("Usuário não existe ou não está conectado."))
 
 if __name__ == "__main__":
     main()

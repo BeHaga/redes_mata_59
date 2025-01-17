@@ -14,12 +14,12 @@ Os alunos devem trabalhar em equipes para implementar um sistema distribuído qu
 - **Escopo do Sistema**: Criar uma aplicação cliente-servidor para uma rede fictícia de compartilhamento de informações, com funcionalidades como:
     - Cadastro de usuários. (✅)
     - Envio e recebimento de mensagens em tempo real (chat). (✅)
-    - Transferência de arquivos entre clientes. (❌)
+    - Transferência de arquivos entre clientes. (✅)
     - Registros e logs de atividade. (❌)
 - **Requisitos Técnicos**:
    - Implementação de sockets TCP e UDP. (✅)
    - Suporte para comunicação simultânea de múltiplos clientes (concorrência com threads ou processos). (✅)
-   - Mecanismos básicos de autenticação (login/senha). (⌛)
+   - Mecanismos básicos de autenticação (login/senha). (✅)
    - Tratamento de erros e reconexão em caso de falhas. (❌)
    - Criptografia básica para troca de mensagens (ex.: AES ou RSA). (✅)
    - Controle de tráfego (ex.: limitar o número de conexões simultâneas por cliente). (❌)

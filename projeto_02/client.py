@@ -81,13 +81,17 @@ def chat(client_socket):
     thread = threading.Thread(target=receive_messages, args=[client_socket], daemon=True)
     thread.start()
 
-    print("'/exit' para sair ou '/p <destinatário> <mensagem>' para uma mensagem privada")
+    print("'/exit' para sair ou '/p <destinatário> <mensagem>' para uma mensagem privada ou '/file <destinatário> <caminho_do_arquivo> para um arquivo")
     while True:
         message = input()
-        client_socket.sendall(aes.encrypt(message))
-        if message == "/exit":
-            print("Você foi desconectado \n")
-            break
+        if message.startswith("/file"):
+            _, receiver, file_path = message.split(" ", 2)
+            send_file(client_socket, receiver, file_path)
+        else:
+            client_socket.sendall(aes.encrypt(message))
+            if message == "/exit":
+                print("Você foi desconectado \n")
+                break
 
 def receive_messages(client_socket):
     while True:
@@ -96,7 +100,16 @@ def receive_messages(client_socket):
             if message:
                 print(message)
         except:
-            break
+            break     
+
+def send_file(client_socket, receiver, file_path):
+    with open(file_path, "rb") as file:
+        file_content = file.read()
+    file_name = file_path.split("/")[-1]
+    message = f"/file {receiver} {file_name} {len(file_content)}"
+    client_socket.sendall(aes.encrypt(message))
+    client_socket.sendall(file_content)
+    print(f"Arquivo '{file_name}' enviado para {receiver}.")
 
 #executar a main sempre após todas as funções estarem escritas acima
 if __name__ == "__main__":
