@@ -15,10 +15,15 @@ def main():
     server_socket.listen(5)  # Aguarda até 5 conexões
     print("Servidor iniciado. Aguardando conexões...")
 
-    while True:
-        client_socket, addr = server_socket.accept()
-        thread = threading.Thread(target=handle_client, args=(client_socket, addr))
-        thread.start()
+    try:
+        while True:
+            client_socket, addr = server_socket.accept()
+            thread = threading.Thread(target=handle_client, args=(client_socket, addr))
+            thread.start()
+    except KeyboardInterrupt:
+        print("Encerrando servidor...")
+    finally:
+        server_socket.close()
 
 #backup dos dados de login dos usuarios
 import json
@@ -44,7 +49,8 @@ def handle_client(client_socket, addr):
 
         if command == "autenticar":
             print("Encaminhando cliente para autenticação")
-            authenticate(client_socket, addr)
+            if not authenticate(client_socket, addr):
+                break
         elif command == "cadastrar":
             register(client_socket, addr)
         elif command == "sair":
@@ -63,9 +69,10 @@ def authenticate(client_socket, addr):
     password = client_socket.recv(1024).decode()
 
     if username in users and users[username] == password:
+        users[username] = {"sckt": client_socket}
         client_socket.send(b"Autenticado com sucesso!")
         print(f"Usuário {username} autenticado com sucesso!")
-        chat(client_socket, addr)
+        return chat(client_socket, addr, username)
     else:
         #Lembrando que bytes não aceita caracteres pt-br
         client_socket.send(b"Falha na autenticacao!")
@@ -86,20 +93,36 @@ def register(client_socket, addr):
         authenticate(client_socket, addr)
 
 #após autenticação, o cliente é liberado para utilizar o chat
-def chat(client_socket, addr):
+def chat(client_socket, addr, sender):
     while True:        
         #recebe a mensagem do cliente
         message = client_socket.recv(1024).decode()
-        if message == "sair":
+
+        if message.startswith("/p"):
+            _, receiver, text = message.split(" ", 2)
+            send_private_message(client_socket, sender, receiver, text)
+
+        elif message.startswith("/exit"):
             client_socket.close()
-            print(f"O usuário {addr} encerrou sua conexão com o servidor")
+            print(f"O usuário {sender} {addr} encerrou sua conexão com o servidor")
             return False
 
         print(f"Mensagem recebido do usuário {addr}")
         
         #Lembrando que bytes não aceita caracteres pt-br
-        response = f"Eu recebi a sua mensagem que veio escrito '{message}'"
+        response = f"\n Servidor recebeu a sua mensagem que veio escrito '{message}' \n"
         client_socket.send(response.encode())
+
+def send_private_message(client_socket, sender, receiver, text):
+    if receiver in users and users[receiver]["sckt"]: #Se usuario existe e tem uma conexão ativa
+        receiver_socket = users[receiver]["sckt"]
+        mensagem = f"({sender}): {text}"
+        receiver_socket.sendall(mensagem.encode())
     
+    else:
+        print(f"Destinatário {receiver} não existe")
+        aviso = "Usuário não existe \n"
+        client_socket.sendall(aviso.encode())
+
 if __name__ == "__main__":
     main()

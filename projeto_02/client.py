@@ -7,6 +7,7 @@
 # - (OPCIONAL) clientes podem se juntar a grupos multicast (semelhante ao que ocorre no whatsapp)
 
 import socket
+import threading
 
 def main():
     #.AF_INET para comunicação baseada em IPs no formato protocolo IPv4
@@ -73,15 +74,25 @@ def register(client_socket):
         authenticate(client_socket)
 
 def chat(client_socket):
+    thread = threading.Thread(target=receive_messages, args=[client_socket], daemon=True)
+    thread.start()
+
+    print("'/exit' para sair ou '/p <destinatário> <mensagem>' para uma mensagem privada")
     while True:
-        message = input("Digite 'sair' para sair ou Digite sua mensagem: ")
-        client_socket.send(message.encode())
-        response = client_socket.recv(1024).decode()
-        if response == "":
-            print(f"Desconectado do servidor")
-            client_socket.close()
-            return False
-        print(f"Resposta do servidor: {response}")
+        message = input()
+        client_socket.sendall(message.encode())
+        if message == "/exit":
+            print("Você foi desconectado \n")
+            break
+
+def receive_messages(client_socket):
+    while True:
+        try:
+            message = client_socket.recv(1024).decode()
+            if message:
+                print(message)
+        except:
+            break
 
 #executar a main sempre após todas as funções estarem escritas acima
 if __name__ == "__main__":
