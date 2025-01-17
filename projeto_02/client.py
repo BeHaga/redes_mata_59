@@ -14,7 +14,37 @@ def main():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #esse IP é o padrão de loopback, utilizado em desenvolvimento local
     client_socket.connect(("127.0.0.1", 12345))
+    
+    print("Seja bem vindo! Escolha uma das opções a seguir: ")
 
+    while True:
+        print("1 - Autenticar")
+        print("2 - Cadastrar novo usuário")
+        print("3 - Sair")
+        option = input("Digite o número da opção desejada: ")
+
+        if option == "1":
+            client_socket.send(b"autenticar")
+            authenticate(client_socket)
+            break
+        elif option == "2":
+            client_socket.send(b"cadastrar")
+            register(client_socket)
+            break
+        elif option == "3":
+            client_socket.send(b"sair")
+            response = client_socket.recv(1024).decode()
+            print(response)
+            break
+        else:
+            client_socket.send(b"invalido")
+            response = client_socket.recv(1024).decode()
+            print(response)
+            print("Segue novamente as opções:")
+
+    client_socket.close()
+
+def authenticate(client_socket):
     #autenticacao por parte do cliente
     username = input("Digite o nome de usuário: ")
     client_socket.send(username.encode())
@@ -26,9 +56,21 @@ def main():
 
     if response == "Autenticado com sucesso!":
         chat(client_socket)
-        
+
     #.close() é utilizado para liberar recursos do sistema e informar ao cliente que a comunicação com o servidor foi encerrada
     client_socket.close()
+
+def register(client_socket):
+    new_username = input("Digite o nome de usuário desejado: ")
+    client_socket.send(new_username.encode())
+    new_password = input("Digite a senha desejada: ")
+    client_socket.send(new_password.encode())
+    response = client_socket.recv(1024).decode()
+    print(response)
+    if response == "Usuario ja existe!":
+        register(client_socket)
+    else:
+        authenticate(client_socket)
 
 def chat(client_socket):
     while True:
@@ -37,6 +79,7 @@ def chat(client_socket):
         response = client_socket.recv(1024).decode()
         if response == "":
             print(f"Desconectado do servidor")
+            client_socket.close()
             return False
         print(f"Resposta do servidor: {response}")
 
