@@ -10,6 +10,8 @@ import socket
 import threading
 from crypto import AES
 from time import sleep
+import os
+import sys
 
 aes = AES()
 
@@ -150,16 +152,21 @@ def receive_messages():
                     print("Aperte 'Enter' para retomar a aplicação")
                     reconnectFlag = True
                     return
+        except:
+            break
 
 def send_file(receiver, file_path):
     global client_socket
-    with open(file_path, "rb") as file:
-        file_content = file.read()
-    file_name = file_path.split("/")[-1]
-    message = f"/file {receiver} {file_name} {len(file_content)}"
-    client_socket.sendall(aes.encrypt(message))
-    client_socket.sendall(file_content)
-    print(f"Arquivo '{file_name}' enviado para {receiver}.")
+    try:
+        with open(file_path, "rb") as file:
+            file_content = file.read()
+        file_name = file_path.split("/")[-1]
+        message = f"/file {receiver} {file_name} {len(file_content)}"
+        client_socket.sendall(aes.encrypt(message))
+        client_socket.sendall(file_content)
+        print(f"Arquivo '{file_name}' enviado para {receiver}.")
+    except FileNotFoundError:
+        print(f"Arquivo não encontrado: {file_path}")
 
 def handle_disconnection():
     global client_socket
@@ -168,11 +175,13 @@ def handle_disconnection():
         connected = False
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #recria socket para reconexão
         print("Conexão perdida! Reconectando...")
-        attempts = 0
+        attempts = 1
         while not connected:
-            if attempts >= 5: #Após 15 segundos tentando reconexão
+            if attempts > 5: #Após 15 segundos tentando reconexão
                 print("Não foi possível se conectar ao servidor. Encerrando aplicação...")
-                return connected
+                client_socket.close()
+                os._exit(1)
+            print(f"{attempts}º Tentativa de reconexão...")
             try:
                 client_socket.connect(("127.0.0.1", 12345))
                 client_socket.sendall(aes.key)
