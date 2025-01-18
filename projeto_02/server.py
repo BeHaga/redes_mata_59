@@ -52,7 +52,10 @@ def handle_client(client_socket, addr):
     clients_aes_keys[addr] = aes_key
 
     while True:
-        command = aes.decrypt(client_socket.recv(1024))
+        encrypted_command = client_socket.recv(1024)
+        if not encrypted_command:
+            continue
+        command = aes.decrypt(encrypted_command)
 
         if command == "autenticar":
             print("Encaminhando cliente para autenticação")
@@ -117,7 +120,6 @@ def chat(client_socket, addr, sender):
             receive_file(client_socket, sender, receiver, file_name, file_size)
 
         elif message.startswith("/exit"):
-            client_socket.close()
             print(f"O usuário {sender} {addr} encerrou sua conexão com o servidor")
             del active_connections[sender]
             return False
