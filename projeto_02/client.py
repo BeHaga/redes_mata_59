@@ -145,7 +145,10 @@ def receive_messages():
             encrypted_message = client_socket.recv(1024)
             message = aes.decrypt(encrypted_message)
             if message:
-                print(message)
+                if message.startswith("/file"):
+                    receive_file(message)
+                else:
+                    print(message)
         except socket.error:
             if not exitFlag:
                 if handle_disconnection():
@@ -167,6 +170,13 @@ def send_file(receiver, file_path):
         print(f"Arquivo '{file_name}' enviado para {receiver}.")
     except FileNotFoundError:
         print(f"Arquivo não encontrado: {file_path}")
+
+def receive_file(message):
+    _, sender, file_name, file_content = message.split(' ', 3)
+    
+    with open(f"received_{file_name}", "w") as file:
+        file.write(file_content)
+    print(f"{sender} enviou um arquivo: {file_name}. Salvo como 'received_{file_name}")
 
 def handle_disconnection():
     global client_socket

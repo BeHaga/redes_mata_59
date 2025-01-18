@@ -160,9 +160,8 @@ def receive_file(client_socket, sender, receiver, file_name, file_size):
             file_content += client_socket.recv(min(file_size - len(file_content), 1024))
 
         #envia o arquivo ao destinatário
-        header = f"/file {sender} {file_name} {file_size}"
+        header = f"/file {sender} {file_name} {file_content}"
         receiver_socket.sendall(aes_receiver.encrypt(header))
-        receiver_socket.sendall(file_content)
         print(f"Arquivo '{file_name}' enviado de {sender} para {receiver}.")
 
     else:
