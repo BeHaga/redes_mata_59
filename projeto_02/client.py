@@ -147,7 +147,7 @@ def receive_messages():
         except socket.error:
             if not exitFlag:
                 if handle_disconnection():
-                    print("Envie qualquer caractere para retomar a aplicação")
+                    print("Aperte 'Enter' para retomar a aplicação")
                     reconnectFlag = True
                     return
 
