@@ -58,7 +58,7 @@ def handle_client(client_socket, addr):
         command = aes.decrypt(encrypted_command)
 
         if command == "autenticar":
-            print("Encaminhando cliente para autenticação")
+            print(f"Encaminhando cliente {addr} para autenticação")
             if not authenticate(client_socket, addr):
                 break
         elif command == "cadastrar":
@@ -71,7 +71,7 @@ def handle_client(client_socket, addr):
 
 #indo para a parte de autenticação do servidor, solicitando ao usuário login e registro
 def authenticate(client_socket, addr):
-    print("Cliente chegou na autenticação")
+    print(f"Cliente {addr} chegou na autenticação")
     aes = AES(key=clients_aes_keys[addr])
     username = aes.decrypt(client_socket.recv(1024))
     password = aes.decrypt(client_socket.recv(1024))
@@ -79,7 +79,7 @@ def authenticate(client_socket, addr):
     if username in users and users[username] == password:
         active_connections[username] = client_socket  # Armazena socket em dicionário separado
         client_socket.send(aes.encrypt("Autenticado com sucesso!"))
-        print(f"Usuário {username} autenticado com sucesso!")
+        print(f"Usuário {username} {addr} autenticado com sucesso!")
         return chat(client_socket, addr, username)
     else:
         client_socket.send(aes.encrypt("Falha na autenticacao!"))
